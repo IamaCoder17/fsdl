@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Too Girly Dating App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ========================================================= -->
+<!-- ========================= STYLE ========================= -->
+<!-- ========================================================= -->
+<style>
+
+/* -------------------- RESET -------------------- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* -------------------- BODY -------------------- */
+body {
+  font-family: "Comic Sans MS", Arial, sans-serif;
+  background:
+    radial-gradient(circle at top, #ffb6c1, #ff69b4),
+    url("https://www.transparenttextures.com/patterns/flowers.png");
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* -------------------- APP -------------------- */
+#app {
+  width: 360px;
+  height: 640px;
+  background: rgba(255, 240, 245, 0.97);
+  border-radius: 24px;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+/* -------------------- SCREENS -------------------- */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+/* -------------------- START SCREEN -------------------- */
+#startScreen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#startScreen h1 {
+  color: #ff1493;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.choiceBtn {
+  background: #ff69b4;
+  color: white;
+  padding: 16px 40px;
+  border-radius: 40px;
+  margin: 12px;
+  font-size: 18px;
+  cursor: pointer;
+  border: none;
+}
+
+/* -------------------- CARD STACK -------------------- */
+#cardStack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* -------------------- CARD -------------------- */
+.card {
+  position: absolute;
+  width: calc(100% - 30px);
+  height: calc(100% - 80px);
+  top: 15px;
+  left: 15px;
+  background: white;
+  border-radius: 22px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* -------------------- IMAGE -------------------- */
+.card img {
+  width: 100%;
+  height: 60%;
+  object-fit: cover;
+  border-bottom: 4px solid hotpink;
+}
+
+/* -------------------- CONTENT -------------------- */
+.cardContent {
+  padding: 14px;
+}
+
+.cardContent h2 {
+  color: #c71585;
+  margin-bottom: 6px;
+}
+
+.cardContent p {
+  color: #444;
+  font-size: 14px;
+}
+
+/* -------------------- BADGES -------------------- */
+.badge {
+  position: absolute;
+  top: 30px;
+  padding: 10px 20px;
+  font-weight: bold;
+  font-size: 22px;
+  border-radius: 12px;
+  opacity: 0;
+}
+
+.likeBadge {
+  left: 20px;
+  color: #00a86b;
+  border: 3px solid #00a86b;
+}
+
+.nopeBadge {
+  right: 20px;
+  color: #ff4d6d;
+  border: 3px solid #ff4d6d;
+}
+
+/* -------------------- FOOTER -------------------- */
+#footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 60px;
+  background: #ffb6c1;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.footerBtn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.skipBtn {
+  background: #ddd;
+}
+
+.likeBtn {
+  background: #ff1493;
+  color: white;
+}
+
+</style>
+</head>
+
+<!-- ========================================================= -->
+<!-- ========================= BODY ========================== -->
+<!-- ========================================================= -->
+<body>
+
+<div id="app">
+
+  <!-- ================= START ================= -->
+  <div id="startScreen" class="screen active">
+    <h1>💖 Who are you interested in? 💖</h1>
+    <button class="choiceBtn" onclick="startApp('female')">Females 💪</button>
+    <button class="choiceBtn" onclick="startApp('male')">Males 💅</button>
+  </div>
+
+  <!-- ================= MAIN ================= -->
+  <div id="mainScreen" class="screen">
+    <div id="cardStack"></div>
+    <div id="footer">
+      <button class="footerBtn skipBtn" onclick="forceSwipe(-1)">✖</button>
+      <button class="footerBtn likeBtn" onclick="forceSwipe(1)">❤</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========================================================= -->
+<!-- ======================= SCRIPT ========================== -->
+<!-- ========================================================= -->
+<script>
+
+/* -------------------- STATE -------------------- */
+let profiles = [];
+let currentIndex = 0;
+let currentCard = null;
+let startX = 0;
+let currentX = 0;
+let dragging = false;
+
+/* -------------------- DATA -------------------- */
+const maleProfiles = [
+  {
+    name: "Ayaan",
+    age: 22,
+    bio: "Crop tops. Iced coffee. Soft voice.",
+    img: "https://picsum.photos/seed/m1/400/600"
+  },
+  {
+    name: "Kabir",
+    age: 25,
+    bio: "Skincare expert. Directionless IRL.",
+    img: "https://picsum.photos/seed/m2/400/600"
+  },
+  {
+    name: "Advay",
+    age: 20,
+    bio: "tedha hai par 13 hai (#hingestage) (#faizulover)",
+    img: "deleteafter.jpg"
+  },
+  {
+    name: "Rohit",
+    age: 27,
+    bio: "Kurta + rings + emotions.",
+    img: "https://picsum.photos/seed/m3/400/600"
+  }
+];
+
+// Filler profiles to push LOC + realism
+for (let i = 5; i <= 50; i++) {
+  maleProfiles.push({
+    name: "Male " + i,
+    age: 20 + (i % 10),
+    bio: "Average Indian male bio #" + i,
+    img: "https://picsum.photos/seed/male" + i + "/400/600"
+  });
+}
+
+const femaleProfiles = [];
+for (let i = 1; i <= 50; i++) {
+  femaleProfiles.push({
+    name: "Female " + i,
+    age: 21 + (i % 8),
+    bio: "Gym. Protein. Side-eye energy #" + i,
+    img: "https://picsum.photos/seed/female" + i + "/400/600"
+  });
+}
+
+/* -------------------- START APP -------------------- */
+function startApp(gender) {
+  document.getElementById("startScreen").classList.remove("active");
+  document.getElementById("mainScreen").classList.add("active");
+
+  profiles = gender === "male" ? maleProfiles : femaleProfiles;
+  currentIndex = 0;
+  renderNextCard();
+}
+
+/* -------------------- CREATE CARD -------------------- */
+function createCard(profile) {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const img = document.createElement("img");
+  img.src = profile.img;
+
+  const content = document.createElement("div");
+  content.className = "cardContent";
+
+  const h2 = document.createElement("h2");
+  h2.textContent = profile.name + ", " + profile.age;
+
+  const p = document.createElement("p");
+  p.textContent = profile.bio;
+
+  const likeBadge = document.createElement("div");
+  likeBadge.className = "badge likeBadge";
+  likeBadge.textContent = "LIKE";
+
+  const nopeBadge = document.createElement("div");
+  nopeBadge.className = "badge nopeBadge";
+  nopeBadge.textContent = "NOPE";
+
+  content.appendChild(h2);
+  content.appendChild(p);
+  card.appendChild(img);
+  card.appendChild(content);
+  card.appendChild(likeBadge);
+  card.appendChild(nopeBadge);
+
+  addDragHandlers(card, likeBadge, nopeBadge);
+
+  return card;
+}
+
+/* -------------------- RENDER -------------------- */
+function renderNextCard() {
+  if (currentIndex >= profiles.length) return;
+
+  const card = createCard(profiles[currentIndex]);
+  document.getElementById("cardStack").appendChild(card);
+  currentCard = card;
+  currentIndex++;
+}
+
+/* -------------------- DRAG -------------------- */
+function addDragHandlers(card, likeBadge, nopeBadge) {
+  card.addEventListener("mousedown", startDrag);
+  card.addEventListener("touchstart", startDrag);
+
+  function startDrag(e) {
+    dragging = true;
+    startX = e.touches ? e.touches[0].clientX : e.clientX;
+    card.style.transition = "none";
+    document.addEventListener("mousemove", drag);
+    document.addEventListener("mouseup", endDrag);
+    document.addEventListener("touchmove", drag);
+    document.addEventListener("touchend", endDrag);
+  }
+
+  function drag(e) {
+    if (!dragging) return;
+    currentX = (e.touches ? e.touches[0].clientX : e.clientX) - startX;
+    card.style.transform = `translateX(${currentX}px) rotate(${currentX/15}deg)`;
+    likeBadge.style.opacity = currentX > 0 ? Math.min(currentX / 100, 1) : 0;
+    nopeBadge.style.opacity = currentX < 0 ? Math.min(-currentX / 100, 1) : 0;
+  }
+
+  function endDrag() {
+    dragging = false;
+    card.style.transition = "0.4s";
+    if (Math.abs(currentX) > 120) {
+      swipe(currentX > 0 ? 1 : -1);
+    } else {
+      card.style.transform = "";
+      likeBadge.style.opacity = 0;
+      nopeBadge.style.opacity = 0;
+    }
+    document.removeEventListener("mousemove", drag);
+    document.removeEventListener("mouseup", endDrag);
+    document.removeEventListener("touchmove", drag);
+    document.removeEventListener("touchend", endDrag);
+  }
+}
+
+/* -------------------- SWIPE -------------------- */
+function swipe(dir) {
+  if (!currentCard) return;
+  currentCard.style.transform = `translateX(${dir * 500}px) rotate(${dir * 25}deg)`;
+  setTimeout(() => {
+    currentCard.remove();
+    currentCard = null;
+    renderNextCard();
+  }, 300);
+}
+
+/* -------------------- BUTTON SWIPE -------------------- */
+function forceSwipe(dir) {
+  swipe(dir);
+}
+
+</script>
+
+</body>
+</html>
